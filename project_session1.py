@@ -16,7 +16,6 @@ for line in clean_output.split("\n"):
         new_output += "\t\t Signal\t\t\t\t: " + "*"*num_stars + "\n"
     else:
         new_output += line + "\n"
-
 print(new_output)
 
 
