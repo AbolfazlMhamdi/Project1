@@ -13,7 +13,7 @@ for line in clean_output.split("\n"):
     if "Signal" in line:
         signal_strength = int(line.split(":")[1].strip()[:-1])
         num_stars = int(signal_strength/10)
-        new_output += "\t\t Signal\t\t\t\t: " + "*"*num_stars + "\n"
+        new_output += "\t\t Signal\t\t\t\t: " + "■ "*num_stars + "\n"
     else:
         new_output += line + "\n"
 
