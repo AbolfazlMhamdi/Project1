@@ -45,13 +45,13 @@ private static async Task CalculateAndDeposit(PersianDateTime depositProfitPersi
 
             var calculatedContractProfit = await _contractService.CalculatedContractProfitForTodayAsync(contract.Id);
 
-            // Apply the logic you provided
-            ApplyProfitLogic(calculatedContractProfit);
+            // Apply the updated logic for adjusting profit based on the mining company's profit
+            ApplyProfitLogic(calculatedContractProfit, miningCompanyProfit);
 
             var calculatedMarketingProfit = await _contractService.CalculatedContractMarketingProfitForTodayAsync(contract.Id);
 
-            // Apply the logic you provided
-            ApplyProfitLogic(calculatedMarketingProfit);
+            // Apply the updated logic for adjusting profit based on the mining company's profit
+            ApplyProfitLogic(calculatedMarketingProfit, miningCompanyProfit);
 
             await _uow.SaveChangesAsync();
 
@@ -68,21 +68,46 @@ private static async Task CalculateAndDeposit(PersianDateTime depositProfitPersi
 }
 
 // Helper method to apply profit logic
-private static void ApplyProfitLogic((long, long) calculatedProfit)
+private static void ApplyProfitLogic((long, long) calculatedProfit, double miningCompanyProfit)
 {
     var userId = calculatedProfit.Item1;
     var profitAmount = calculatedProfit.Item2;
+    var adjustedProfit = 0.0;
 
-    // Your logic for adjusting profit based on the mining company's profit
+    if (miningCompanyProfit < 13)
+    {
+        // Reduce user profit by 5% at most
+        adjustedProfit = Math.Max(profitAmount * 0.95, profitAmount * 0.97);
 
-    // Example: Reducing profit by 5%
-    var adjustedProfit = profitAmount * 0.95;
+        // Save the adjusted profit back to the database or perform other necessary operations
+        SaveAdjustedProfit(userId, adjustedProfit, "Adjusted profit due to mining company's profit", WalletTransactionType.Daily_Contract_Profit, startDateTimeToWithdraw, depositProfitPersianDateTime);
+    }
+    else
+    {
+        // Increase legal reserve, platform cost, and currency exchange risk for profits greater than 13%
+        var legalReserve = profitAmount * 0.03;
+        var platformCost = profitAmount * 0.02;
+        var currencyRisk = profitAmount * 0.02;
 
-    // Save the adjusted profit back to the database or perform other necessary operations
-    // ...
+        // Adjust user profit to 5%
+        adjustedProfit = profitAmount * 0.05;
 
-    description = $"Adjusted profit due to mining company's profit. Original: {profitAmount}, Adjusted: {adjustedProfit}";
-    _wallets.Add(IncWallet(userId: userId, price: (long)adjustedProfit, contractId: contract.Id, description: description, transactionType: WalletTransactionType.Daily_Contract_Profit, startDateTimeToWithdraw: startDateTimeToWithdraw, createDateTime: depositProfitPersianDateTime);
+        // Save the adjusted profit back to the database or perform other necessary operations
+        SaveAdjustedProfit(userId, adjustedProfit, "User profit", WalletTransactionType.Daily_Contract_Profit, startDateTimeToWithdraw, depositProfitPersianDateTime);
+
+        // Save legal reserve, platform cost, and currency exchange risk to the database or perform other necessary operations
+        SavePlatformDetails(userId, legalReserve, platformCost, currencyRisk);
+    }
 }
 
-// Other methods remain unchanged
+private static void SaveAdjustedProfit(long userId, double adjustedProfit, string description, WalletTransactionType transactionType, DateTime startDateTimeToWithdraw, PersianDateTime depositProfitPersianDateTime)
+{
+    var adjustedProfitAsLong = (long)adjustedProfit;
+    _wallets.Add(IncWallet(userId, adjustedProfitAsLong, contract.Id, description, transactionType, startDateTimeToWithdraw, depositProfitPersianDateTime));
+}
+
+private static void SavePlatformDetails(long userId, double legalReserve, double platformCost, double currencyRisk)
+{
+    // Save legal reserve, platform cost, and currency exchange risk to the database or perform other necessary operations
+    // ...
+}
