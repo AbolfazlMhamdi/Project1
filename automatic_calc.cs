@@ -3,7 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using MiningPlatform.Models;
 
-namespace MiningPlatform
+namespace MiningPlatformCalc
 {
     public class User
     {
